@@ -22,10 +22,15 @@ By: Cory Morris
       - [Active SPA](#active-spa)
       - [Proposals](#proposals)
       - [Mercury Supplier-Locations](#mercury-supplier-locations)
+        - [Vendor Setup](#vendor-setup)
     - [FC Operations](#fc-operations)
   - [Sample Center Information](#sample-center-information)
   - [Process Gap Fixes: Short-term](#process-gap-fixes-short-term)
-    - [Cartonization Flag Changes](#cartonization-flag-changes)
+    - [Cartonization Flag Updates](#cartonization-flag-updates)
+      - [Problem](#problem)
+        - [1. Cartonization Flag Changes](#1-cartonization-flag-changes)
+        - [2. Items get added to a PO that we did not order](#2-items-get-added-to-a-po-that-we-did-not-order)
+        - [3. Manual Purchase Orders are not validated against assortment](#3-manual-purchase-orders-are-not-validated-against-assortment)
     - [Ineligible UOM Purchase Order Line Items](#ineligible-uom-purchase-order-line-items)
   - [Appendices](#appendices)
     - [Appendix: Find Active SPA within Mercury](#appendix-find-active-spa-within-mercury)
@@ -209,7 +214,7 @@ DP currently forecasts new items on Fridays because they want to ensure that all
 
 Before the item is assorted, Mercury performs a check to ensure the item has an active SPA. If an item does not then Mercury will apply an `mercury.item_attr.attr_val` as `Missing BPA`. If an active SPA exists, then the item will be automatically assorted per the [Assortment Configurations](#assortment-configurations).
 
-**Gap:** The `Zero Forecast` process is only being followed for 1 or 2 planners. The other planners are new to Chewy and were never taught. There is opportunity to improve this process by making it dynamic and having the assortment uupdated automatically as sales materialize and an accurate forecast is applied.
+**Gap:** The `Zero Forecast` process is only being followed for 1 or 2 planners. The other planners are new to Chewy and were never taught. There is opportunity to improve this process by making it dynamic and having the assortment uupdated automatically as sales materialize and an accurate forecast is applied. There is also an opportunity to implement a review process for new items to decide whether to RTV the inventory and discontinue the item or continue carrying the item in the catalog. Today new items stay perpetually until they do not have an active SPA any longer. There is no review process as to whether a new item is worth keeping in the catalog or not.
 
 ## Upstream Details
 
@@ -273,15 +278,40 @@ You can check supplier-location records through the [Mercury UI](https://mercury
 
 Supplier-location records are initially setup during the vendor setup process by the SP assistants. When the new vendor Jira ticket is assigned to the SP assistant they will input all of the provided lead time and purchasing min/max information. They will also select the `Active` checkbox which will set the `vendor_status` to `Enabled`. These records have not been maintained indicating their data might be out of date - **opportunity**. Another example is that SP uses these records to kill replenishment for a vendor for a period of time but fails to re-activate the supplier-location record later. Disabledsupplier-locations lead to assorted items being primary through transfer within SO99. This currently accounts for ~3k item-locations without inventory on-hand per this [Assortment Gap report](https://facts.chewy.local/#/workbooks/8286/views).
 
+##### Vendor Setup
+
+New vendors and new sites for existing vendors go through the Vendor Setup Process managed by MSS. In this process SPAs are created for all items the vendor agrees to supply Chewy.
+
 ### FC Operations
 
 ## Sample Center Information
 
-There are two FCs that handle sampling items - AVP1 and PHX1. AVP1 is for all National Brand and non-UOM items. PHX1 is for all Private Label and UOM items. This was agreed upon by Quality Assurance's Kyle Rickey.
+There are two FCs that handle sampling items - AVP1 and PHX1. This logic was updated in January 2022 by Kyle Rickey.
+
+- AVP1 is for all National Brand and non-UOM items.
+- PHX1 is for all Private Label and UOM items.
 
 ## Process Gap Fixes: Short-term
 
-### Cartonization Flag Changes
+There are gaps within our current assortment processes as well as Supply Planning that need long-term solutions built. Temporary processes have been put into place, discussed below, to solve for these gaps until a permonent solution is created. These temp solutions still do not prevent issues from ocurring.
+
+### Cartonization Flag Updates
+
+#### Problem
+
+UOM item inventory is arriving at non-UOM locations which cannot receive the product as they are not propoerly equipped to receive, put-away, and ship this large items. This is happening because of three issues.
+
+##### 1. Cartonization Flag Changes
+
+New items added to Chewy's catalog need to be sampled by one of our two [sample centers](#sample-center-information). This is so product dimensions can be input into HighJump (HJ) - fields `aad.t_item_uom.[length,width,height]` - as Chewy's [assortment configurations](#assortment-configurations) utilize the `cartonization_flag` to assort items. If an item is not sampled then the dimensios input by the sourcing manager - fields `chewybi.products.product_[length,width,height]` - will be used to set the item's `cartonization_flag`.
+
+If an item is classified incorrectly this will lead to items be incorrectly assorted and subsequently placed on-order. As of 2/10/22 there are 3 open line items for UOM items which were non-UOM at time of ordering. Since the order date, the item has been sampled by QA and changed to UOM status.
+
+##### 2. Items get added to a PO that we did not order
+
+##### 3. Manual Purchase Orders are not validated against assortment
+
+j
 
 ### Ineligible UOM Purchase Order Line Items
 
